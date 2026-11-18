@@ -1,0 +1,68 @@
+<main class="app-shell" [class.dark]="dark">
+  <nav class="topbar">
+    <div class="brand"><span class="logo">◆</span><div><strong>BLOCKS</strong><small>PUZZLE</small></div></div>
+    <div class="nav-actions">
+      <button class="icon-button" (click)="toggleTheme()" aria-label="Toggle theme">{{ dark ? '☀' : '☾' }}</button>
+      <button class="icon-button" (click)="togglePause()" [disabled]="!gameState">{{ paused ? '▶' : 'Ⅱ' }}</button>
+      <button class="icon-button restart" (click)="restart()" [disabled]="!gameState">↻</button>
+    </div>
+  </nav>
+
+  <section *ngIf="!loggedIn" class="auth-card">
+    <p class="eyebrow">WELCOME PLAYER</p>
+    <h1>Stack. Clear. Conquer.</h1>
+    <label>Username<input [(ngModel)]="username" placeholder="Player name"></label>
+    <label>Display name<input [(ngModel)]="displayName" placeholder="Optional"></label>
+    <label>Password<input type="password" [(ngModel)]="password" placeholder="6+ characters"></label>
+    <button class="primary" (click)="login()">Enter the arena</button>
+    <p *ngIf="authError" class="auth-error">{{ authError }}</p>
+  </section>
+
+  <section *ngIf="loggedIn" class="game-layout">
+    <aside class="left-panel">
+      <div class="panel score-card">
+        <span>BEST</span><strong>{{ leaderboard[0]?.best_score || 0 }}</strong>
+      </div>
+      <div class="panel score-card accent">
+        <span>SCORE</span><strong>{{ gameState?.score || 0 }}</strong>
+      </div>
+      <div class="panel stats"><div><b>{{ gameState?.moves || 0 }}</b><span>Moves</span></div><div><b>{{ gameState?.cleared_lines || 0 }}</b><span>Lines</span></div></div>
+      <label class="difficulty">DIFFICULTY
+        <select [(ngModel)]="difficulty" [disabled]="!!gameState && gameState.status !== 'game_over'">
+          <option value="easy">Easy</option><option value="medium">Medium</option><option value="hard">Hard</option>
+        </select>
+      </label>
+    </aside>
+
+    <section class="board-area">
+      <div *ngIf="!gameState" class="start-card">
+        <div class="mini-grid">◆ ◆ ◆<br>◆ ◆ ◇<br>◆ ◇ ◇</div>
+        <h1>Ready to play?</h1><p>Complete rows and columns to clear the board.</p>
+        <button class="primary" (click)="start()">Start new game</button>
+      </div>
+
+      <div *ngIf="gameState" class="board" [class.paused]="paused">
+        <ng-container *ngFor="let row of gameState.board; let r = index">
+          <div *ngFor="let cell of row; let c = index" class="cell"
+               [class.filled]="cell === 1" [class.preview]="isPreview(r,c)"
+               (mouseenter)="preview(r,c)" (click)="place(r,c)"></div>
+        </ng-container>
+        <div *ngIf="paused" class="pause-overlay"><strong>PAUSED</strong><button (click)="togglePause()">Resume</button></div>
+        <div *ngIf="gameState.status === 'game_over'" class="game-over"><strong>GAME OVER</strong><span>{{ gameState.score }} points</span><button (click)="start()">Play again</button></div>
+      </div>
+
+      <div *ngIf="gameState" class="pieces">
+        <button *ngFor="let block of gameState.available_blocks" class="piece" [class.selected]="selected?.id === block.id" (click)="selectBlock(block)"
+                [style.--piece-cols]="block.cells[0].length">
+          <span *ngFor="let cell of block.cells" class="piece-block" [style.background]="block.color"
+                [style.grid-row]="cell[0] + 1" [style.grid-column]="cell[1] + 1"></span>
+        </button>
+      </div>
+    </section>
+
+    <aside class="right-panel panel">
+      <h3>Leaderboard</h3>
+      <div *ngFor="let entry of leaderboard.slice(0,8)" class="leader"><span>{{ entry.rank }}</span><div><b>{{ entry.display_name }}</b><small>{{ entry.username }}</small></div><strong>{{ entry.best_score }}</strong></div>
+    </aside>
+  </section>
+</main>

@@ -1,0 +1,61 @@
+CREATE TABLE users (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  username VARCHAR(50) NOT NULL UNIQUE,
+  password_hash VARCHAR(255) NOT NULL,
+  display_name VARCHAR(100) NOT NULL,
+  avatar VARCHAR(255),
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_users_username (username)
+);
+
+CREATE TABLE game_sessions (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  player_id BIGINT NOT NULL,
+  difficulty VARCHAR(20) NOT NULL,
+  board JSON NOT NULL,
+  available_blocks JSON NOT NULL,
+  score INT NOT NULL DEFAULT 0,
+  status VARCHAR(20) NOT NULL DEFAULT 'active',
+  moves INT NOT NULL DEFAULT 0,
+  cleared_lines INT NOT NULL DEFAULT 0,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (player_id) REFERENCES users(id) ON DELETE CASCADE,
+  INDEX idx_session_player_status (player_id, status)
+);
+
+CREATE TABLE game_scores (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  player_id BIGINT NOT NULL,
+  session_id BIGINT NOT NULL,
+  score INT NOT NULL DEFAULT 0,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_player_session_score (player_id, session_id),
+  FOREIGN KEY (player_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (session_id) REFERENCES game_sessions(id) ON DELETE CASCADE
+);
+
+CREATE TABLE leaderboard (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  player_id BIGINT NOT NULL UNIQUE,
+  best_score INT NOT NULL DEFAULT 0,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_leaderboard_score (best_score DESC),
+  FOREIGN KEY (player_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE game_history (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  player_id BIGINT NOT NULL,
+  session_id BIGINT NOT NULL,
+  difficulty VARCHAR(20) NOT NULL,
+  final_score INT NOT NULL DEFAULT 0,
+  moves INT NOT NULL DEFAULT 0,
+  cleared_lines INT NOT NULL DEFAULT 0,
+  completed BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (player_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (session_id) REFERENCES game_sessions(id) ON DELETE CASCADE,
+  INDEX idx_history_player_created (player_id, created_at)
+);
